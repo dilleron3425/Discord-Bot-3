@@ -6,7 +6,7 @@ from discord.ext.commands import Bot as BotBase
 from discord.ext import commands
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from datetime import datetime
-from discord import Embed, File
+from discord import Embed
 from rich.progress import Progress
 from rich.console import Console
 from threading import Thread
@@ -46,33 +46,52 @@ class Bot(BotBase):
     async def on_connect(self):
         print('George? подключился!!!')
 
-    async def on_disconnect(self):
-        channel = self.get_channel(1147910681488797819)
-        embed = Embed(title='George? был только что отключён!!!')
+    async def clear_error(self, ctx, error):
+        if isinstance(error, commands.MissingRequiredArgument):
+            embed = discord.Embed(title='Ошибка!',
+                                  color=discord.Colour.from_rgb(255, 0, 0))
+            embed.add_field(value=f'{ctx.author.mention}, обязательно укажите аргумент!')
+            await ctx.send(embed=embed)
+            console.print(f'[#a0a0a0][{self.current_date} {time.strftime("%X")}][/] George? говорит {ctx.author}, что нужно обязательно указать аргумент!')
+        if isinstance(error, commands.MissingPermissions):
+            embed = discord.Embed(title='Ошибка!',
+                                  color=discord.Colour.from_rgb(255, 0, 0))
+            embed.add_field(name='', value=f'{ctx.author.mention}, у вас не достаточно прав!')
+            await ctx.send(embed=embed)
+            console.print(f'[#a0a0a0][{self.current_date} {time.strftime("%X")}][/] George? говорит {ctx.author}, что у него не достаточно прав!')
+        if isinstance(error, commands.CommandNotFound):
+            embed = discord.Embed(title='Ошибка!',
+                                  color=discord.Colour.from_rgb(255, 0, 0))
+            embed.add_field(name='', value=f'{ctx.author.mention}, такой команды нету!')
+            await ctx.send(embed=embed)
+            console.print(f'[#a0a0a0][{self.current_date} {time.strftime("%X")}][/] George? говорит {ctx.author}, что такой команды нету!')
+
+    async def on_error(self, *args, **kwargs):
+        embed = discord.Embed(title='Произошла ошибка!',
+                              color=discord.Colour.from_rgb(255, 0, 0),
+                              timestamp=datetime.now())
         embed.set_footer(text='\u200b', icon_url='https://cdn-icons-png.flaticon.com/512/7704/7704523.png')
-        await channel.send(embed=embed)
-        console.print(f'[#a0a0a0]{self.current_date}[/] George? только что отключился!!!')
+        await self.stdout.send(embed=embed)
+        raise
 
     async def on_ready(self):
         console.print(f"[#a0a0a0][{self.current_date} {time.strftime('%X')}][/] George готов к работе ╰(*°▽°*)╯")
         console.print(f'[#a0a0a0][{self.current_date} {time.strftime("%X")}][/] Version: 3.1.0.0')
         if not self.ready:
             self.ready = True
-            channel = self.get_channel(1147910681488797819)
+            self.stdout = self.get_channel(1147910681488797819)
             embed = Embed(title='George? был только что запущен!!!',
                           colour=discord.Colour.from_rgb(0, 0, 0),
                           timestamp=datetime.now())
             embed.set_footer(text='\u200b', icon_url='https://cdn-icons-png.flaticon.com/512/11338/11338063.png')
-            await channel.send(embed=embed)
-
+            await self.stdout.send(embed=embed)
         else:
-            channel = self.get_channel(1147910681488797819)
             embed = Embed(title='George? был только что пере подключён!!!',
                           colour=discord.Colour.from_rgb(255, 0, 0),
                           timestamp=datetime.now())
             embed.set_footer(text='\u200b', icon_url='https://cdn-icons-png.flaticon.com/512/7704/7704523.png')
-            await channel.send(embed=embed)
-            console.print(f'[#a0a0a0]{self.current_date}[/] George? был только что пере подключился!!!')
+            await self.stdout.send(embed=embed)
+            console.print(f'[#a0a0a0]{self.current_date}[/] George? только что пере подключился!!!')
 
     async def on_message(self, message):
         if message.author.bot == self.client.user:
