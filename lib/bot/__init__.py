@@ -1,7 +1,6 @@
 import discord
 import time
 import json
-import string
 import datetime
 from logging import disable, INFO
 from discord.ext.commands import Bot as BotBase     
@@ -33,12 +32,16 @@ class George(BotBase):
         intents.message_content = True
         self.current_date = datetime.datetime.now().date()
 
-        super().__init__(command_prefix=commands.when_mentioned_or('?'), owner_id='ID', intents=intents)
+        with open("./data/json/config.json") as file:
+            self.config = json.load(file)
 
+        with open(self.config["paths"]["users_path"]) as f:
+            self.data = json.load(f)
+
+        super().__init__(command_prefix=commands.when_mentioned_or('?'), owner_id=self.config["ids"]["owner_id"], intents=intents)
+        
     def run(self):
-        with open('PATH', 'r', encoding='utf-8') as tf:
-            self.TOKEN = tf.read()
-        super().run(self.TOKEN, reconnect=True)
+        super().run(self.config["token"], reconnect=True)
 
     async def clear_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):
@@ -57,70 +60,68 @@ class George(BotBase):
             await ctx.send(embed=embed)
             self.console.print(f'[#a0a0a0][{self.current_date} {time.strftime("%X")}][/] George? says - "{ctx.author} there is no such command!"')
 
-    async def on_error(self):
+    async def on_error(self, event, *args, **kwargs):
             embed = discord.Embed(title='Произошла ошибка!',
                                 color=discord.Colour.from_rgb(255, 0, 0),
                                 timestamp=datetime.datetime.now())
-            embed.set_footer(text='\u200b', icon_url='PATH')
-            await self.stdout.send(embed=embed)
+            embed.add_field(name=f'В {event}: ', value=f'{args} {kwargs}')
+            embed.add_field(name="Желательно!",value=f'Пожалуйста, отправьте эту ошибку(ссылкой) на канал: {self.config["channels"]["bugs"]} и получите +3 репутации!')
+            embed.set_footer(text='\u200b', icon_url=self.config['urls']['url_icon_bug'])
+            if event.startswith('on_message'):
+                ctx = args[0]
+                channel = ctx.channel
+            else:
+                channel = self.get_channel(self.config["channels"]["errors"])
+            await channel.send(embed=embed)
+            self.console.print(f'[#FF0000][{self.current_date} {time.strftime("%X")}][/] An error [#FFA500]{event}[/] has occurred:\n {args} {kwargs} \n')
             raise
 
     async def on_ready(self):
+        self.stdout = self.get_channel(self.config["test_channel"])
         if not self.ready:
             self.ready = True
-            self.stdout = self.get_channel('CHANNEL')
-            await super().change_presence(status=discord.Status.online, activity=discord.Activity(name=' ', type=4, state='Версия: 3.2.2.0'))
+            await super().change_presence(status=discord.Status.online, activity=discord.Activity(name=' ', type=4, state=f'Версия: {self.config["version"]}'))
+            embed = Embed(title='George? был только что запущен!!!',
+                          colour=discord.Colour.from_rgb(0, 0, 0),
+                          timestamp=datetime.datetime.now())
+            embed.set_footer(text='\u200b', icon_url=f'{self.config["urls"]["url_icon_clock"]}')
+            await self.stdout.send(embed=embed)
         else:
-            await super().change_presence(status=discord.Status.online, activity=discord.Activity(name=' ', type=4, state='Версия: 3.2.2.0'))
+            await super().change_presence(status=discord.Status.online, activity=discord.Activity(name=' ', type=4, state=f'Версия: {self.config["version"]}'))
             embed = Embed(title='George? был только что пере подключён!!!',
                           colour=discord.Colour.from_rgb(255, 0, 0),
                           timestamp=datetime.datetime.now())
-            embed.set_footer(text='\u200b', icon_url='URL')
+            embed.set_footer(text='\u200b', icon_url=self.config["urls"]["url_icon"])
             await self.stdout.send(embed=embed)
             self.console.print(f'[#a0a0a0]{self.current_date}[/] George? just joined up!!!')
 
     async def logs(self, msg, channel=None, author: str = None):
-        with open('PATH', 'a', encoding='utf-8') as logs:
+        with open(self.config['paths']["log_path"], 'a', encoding='utf-8') as logs:
             logs.write(f'[{self.current_date} {time.strftime("%X")}] [{channel}] [{author}] {msg}\n')
 
     async def on_message(self, message):
         try:
-            print(f'[{self.current_date} {time.strftime("%X")}] [{message.channel.name}] [{message.author}] {message.content}')
+            self.console.print(f'[#a0a0a0][{self.current_date} {time.strftime("%X")}][/] |{message.channel.name}| |{message.author}| {message.content}')
             await self.logs(message.content, message.channel.name, message.author)
         except AttributeError:
-            print(f'[{self.current_date} {time.strftime("%X")}] [{message.author}] {message.content}')
+            self.console.print(f'[#a0a0a0][{self.current_date} {time.strftime("%X")}][/] |{message.author}| {message.content}')
             return await self.logs(message.content, message.author)
 
         if message.author == self.user:
             return
 
-        if ({i.lower().translate(str.maketrans('', '', string.punctuation)) for i in message.content.split(' ')}
-                    .intersection(set(json.load(open('PATH')))) != set()) and message.author:
-            _id = '<@ID>'
-            embed = Embed(description='  %s тебя зовут! ' % _id, color=discord.Colour.from_rgb(255, 0, 0))
-            await message.channel.send(embed=embed)
-            self.console.print(f"[#a0a0a0][{self.current_date} {time.strftime('%X')}][/] {message.author} mentioned NAME")
+        names_dict = {self.config["ids"]["max_id"]: discord.Colour.from_rgb(255, 0, 0),
+              self.config["ids"]["dima_id"]: discord.Colour.from_rgb(0, 128, 0),
+              self.config["ids"]["leo_id"]: discord.Colour.from_rgb(255, 165, 0),
+              self.config["ids"]["egor_id"]: discord.Colour.from_rgb(139, 0, 255)}
+        names = self.data['names']
 
-        if ({i.lower().translate(str.maketrans('', '', string.punctuation)) for i in message.content.split(' ')}
-                .intersection(set(json.load(open('PATH')))) != set()):
-            _id = '<@ID>'
-            embed = Embed(description='  %s тебя зовут! ' % _id, color=discord.Colour.from_rgb(0, 128, 0))
-            await message.channel.send(embed=embed)
-            self.console.print(f"[#a0a0a0][{self.current_date} {time.strftime('%X')}][/] {message.author} mentioned NAME")
+        for name, color in names_dict.items():
+            if message.author.name.lower() in [name.lower() for sublist in names.values() for name in sublist]:
+                embed = Embed(description=f'  {name} тебя зовут! ', color=color)
+                await message.channel.send(embed=embed)
+                self.console.print(f"[#a0a0a0][{self.current_date} {time.strftime('%X')}][/] {message.author} mentioned {name}")
+                break
 
-        if ({i.lower().translate(str.maketrans('', '', string.punctuation)) for i in message.content.split(' ')}
-                .intersection(set(json.load(open('PATH')))) != set()):
-            _id = '<@ID>'
-            embed = Embed(description='  %s тебя зовут! ' % _id, color=discord.Colour.from_rgb(255, 165, 0))
-            await message.channel.send(embed=embed)
-            self.console.print(f"[#a0a0a0][{self.current_date} {time.strftime('%X')}][/] {message.author} mentioned NAME")
-
-        if ({i.lower().translate(str.maketrans('', '', string.punctuation)) for i in message.content.split(' ')}
-                .intersection(set(json.load(open('PATH')))) != set()):
-            _id = '<@ID>'
-            embed = Embed(description='  %s тебя зовут! ' % _id, color=discord.Colour.from_rgb(139, 0, 255))
-            await message.channel.send(embed=embed)
-            self.console.print(f"[#a0a0a0][{self.current_date} {time.strftime('%X')}][/] {message.author} mentioned NAME")
-
-th1 = Thread(target=animated_loading).start()
 bot = George()
+th1 = Thread(target=animated_loading).start()
