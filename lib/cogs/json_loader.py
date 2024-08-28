@@ -19,5 +19,8 @@ class JsonLoader:
 
         with open(self.config["paths"]["bad_words_path"], 'r', encoding='utf-8') as file:
             self.bad_words = load(file)
+        
+        with open(self.config["paths"]["mods_ids"], 'r', encoding='utf-8') as file:
+            self.mods_ids = load(file)
 
-        self.json_data = {"config": self.config, "data": self.data, "bad_words": self.bad_words}
+        self.json_data = {"config": self.config, "data": self.data, "bad_words": self.bad_words, "mods_ids": self.mods_ids}

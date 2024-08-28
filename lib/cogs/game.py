@@ -12,6 +12,7 @@ class PterodactylControl():
     def handle_error(self, server_status: dict, server_name: str, server_error: Exception) -> None:
         error_messages = {
             409: "Ошибка 409, не удается обработать запрос из-за конфликта в текущем состоянии сервера.",
+            429: "Ошибка 429, слишком много запросов на сервер за единицу времени.",
             500: "Ошибка 500, неисправность конфигурации сервера или запрос был отказан."
         }
         if isinstance(server_error, HTTPError):

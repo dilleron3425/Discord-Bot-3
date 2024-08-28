@@ -1,0 +1,37 @@
+{
+    "version": "str",
+    "created_by": "str",
+    "test_channel": "int_channel",
+    "token": "str_token",
+    "ptero_api": "str_api",
+    "paths":{
+        "log_path": "str_path",
+        "users_path": "str_path",
+        "bad_words_path": "str_path"
+    },
+    "ids": {
+        "owner_id": "str_id",
+        "my_id": "<@str_id>"
+    },
+    "urls": {
+        "url_github": "str_url",
+        "url_github_DS-BOT-3": "str_url",
+        "url_icon_bug": "str_url",
+        "url_icon_clock": "str_url",
+        "url_gif": "str_url",
+        "game_server": "str_url"
+    },
+    "channels": {
+        "bugs": "str_url",
+        "ideas": "str_url",
+        "errors": "int_id"
+    },
+    "pterodactyl": {
+        "server_uuid": {
+            "server_name": "str_uuid"
+        },
+        "server_name": {
+            "server_name": "str_name"
+        }
+    }
+}
