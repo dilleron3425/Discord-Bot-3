@@ -20,7 +20,7 @@ def animated_loading() -> None:
             for i in range(100):
                 text.plain = f"Loading{dots[i % len(dots)]}"
                 live.update(text)
-    Thread(target=CLI, args=(JsonLoader(), Console(), ), daemon=True).start()
+    Thread(target=CLI, args=(JsonLoader(), ), daemon=True).start()
 
 
 class George(commands.Bot):
