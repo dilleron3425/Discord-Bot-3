@@ -1,9 +1,10 @@
-from pydactyl import PterodactylClient
+from typing import Dict, Union, Generator, List
 from requests.exceptions import HTTPError
+from pydactyl import PterodactylClient
 from discord import Colour
 
 class PterodactylControl():
-    def __init__(self, json_loader):
+    def __init__(self, json_loader) -> None:
         self.json_loader = json_loader
         self.config = self.json_loader.json_data['config']
         self.api = PterodactylClient(self.config["urls"]["game_server"], self.config["ptero_api"])
@@ -25,7 +26,17 @@ class PterodactylControl():
         message += f"\nПожалуйста отметьте это сообщение в {self.config['channels']['bugs']}"
         server_status[server_name] = {"message": message, "color": Colour.from_rgb(178,34,34)}
     
-    def server_status(self, server_name: str):
+    def get_server_list(self) -> List[Dict[str, str]]:
+        server_list = self.api.client.servers.list_servers()
+        servers = []
+        for inner_list in server_list:
+            for server in inner_list:
+                server_name = server['attributes']['name']
+                server_uuid = server['attributes']['uuid']
+                servers.append({"name": server_name, "uuid": server_uuid})
+        return servers
+    
+    def server_status(self, server_name: str) -> Generator[Dict[str, Dict[str, Union[str, Colour, int]]], None, None]:
         server_status = {}
         try:
             server_uuid = self.config['pterodactyl']['server_uuid'].get(server_name)
@@ -33,8 +44,18 @@ class PterodactylControl():
                 try:
                     server_data = self.api.client.servers.get_server_utilization(server_uuid)
                     parameters = self.api.client.servers.get_server(server_uuid)
-                    core_name = parameters['relationships']['variables']['data'][3]['attributes']['name']
-                    core_version = parameters['relationships']['variables']['data'][3]['attributes']['server_value']
+                    for variable in parameters['relationships']['variables']['data']:
+                        if variable['attributes']['name'] == 'Forge Version':
+                            core_name = parameters['relationships']['variables']['data'][3]['attributes']['name']
+                            core_version = parameters['relationships']['variables']['data'][3]['attributes']['server_value']
+                            break
+                        elif variable['attributes']['name'] =='Server Version':
+                            core_name = parameters['relationships']['variables']['data'][1]['attributes']['name']
+                            core_version = parameters['relationships']['variables']['data'][1]['attributes']['server_value']
+                            break
+                    else:
+                        core_name = None
+                        core_version = None
                     port = parameters['relationships']['allocations']['data'][0]['attributes']['port']
                     server_status[server_name] = {
                         "message": 'Запущен' if server_data['current_state'] == 'running' else 'Остановлен',
@@ -51,7 +72,7 @@ class PterodactylControl():
             self.handle_error(server_status, server_name, server_error)
         yield server_status
 
-    def server_start(self, server_name):
+    def server_start(self, server_name) -> Generator[Dict[str, Dict[str, Union[str, Colour, int]]], None, None]:
         server_status_generator = self.server_status(server_name)
         server_status = next(server_status_generator)
         current_state = server_status[server_name]['message']
@@ -91,7 +112,7 @@ class PterodactylControl():
             self.handle_error(server_status, server_name, server_error)
         yield server_status
 
-    def server_restart(self, server_name):
+    def server_restart(self, server_name) -> Generator[Dict[str, Dict[str, Union[str, Colour, int]]], None, None]:
         server_status_generator = self.server_status(server_name)
         server_status = next(server_status_generator)
         core_name = server_status[server_name]['core_name']
@@ -124,7 +145,7 @@ class PterodactylControl():
             self.handle_error(server_status, server_name, server_error)
         yield server_status
 
-    def server_stop(self, server_name):
+    def server_stop(self, server_name) -> Generator[Dict[str, Dict[str, Union[str, Colour]]], None, None]:
         server_status_generator = self.server_status(server_name)
         server_status = next(server_status_generator)
         current_state = server_status[server_name]['message']
@@ -149,19 +170,18 @@ class PterodactylControl():
             self.handle_error(server_status, server_name, server_error)
         yield server_status
 
-    def stat_all(self):
-        server_list = self.api.client.servers.list_servers()
+    def stat_all(self) -> Dict[str, Dict[str, Union[str, Colour]]]:
+        server_list = self.get_server_list()
         server_statuses = {}
-        for inner_list in server_list:
-            for server in inner_list:
-                server_name = server['attributes']['name']
-                server_uuid = server['attributes']['uuid']
-                try:
-                    server_info = self.api.client.servers.get_server_utilization(server_uuid)
-                    server_statuses[server_name] = {
-                        "message": 'Запущен' if server_info['current_state'] == 'running' else 'Остановлен',
-                        "color": Colour.from_rgb(0, 128, 0) if server_info['current_state'] == 'running' else Colour.from_rgb(128, 128, 128)
-                    }  
-                except HTTPError as server_error:
-                    self.handle_error(server_statuses, server_name, server_error)
+        for server in server_list:
+            server_name = server['name']
+            server_uuid = server['uuid']
+            try:
+                server_info = self.api.client.servers.get_server_utilization(server_uuid)
+                server_statuses[server_name] = {
+                    "message": 'Запущен' if server_info['current_state'] == 'running' else 'Остановлен',
+                    "color": Colour.from_rgb(0, 128, 0) if server_info['current_state'] == 'running' else Colour.from_rgb(128, 128, 128)
+                }  
+            except HTTPError as server_error:
+                self.handle_error(server_statuses, server_name, server_error)
         return server_statuses
