@@ -60,47 +60,7 @@ class Messenger():
         embed.add_field(name=':small_red_triangle_down: ?stop [имя_сервера]', value='**Останавливает указанный сервер**', inline=False)
         embed.add_field(name=':small_red_triangle_down: ?stat [имя_сервера]', value='**Показывает статистику указанного сервера**', inline=False)
         await message.channel.send(embed=embed)
-    
-    async def update_of_bot(self, message: Message) -> Embed:
-            embed = Embed(title='Обычное обновление!?',
-                          description='Я рад представить вам новое обычное обновление, которое',
-                          url=f"{self.config["urls"]["url_github_DS-BOT-3"]}",
-                          colour=Colour.from_rgb(0, 0, 0))
-            embed.add_field(name=f'Версия: {self.config["version"]}',
-                            value=' ',
-                            inline=False)
-            # embed.add_field(name='Обновлён список:', value='**•**', inline=False)
-            embed.add_field(name="Добавлений - 1 | Исправлений - 1 | Улучшений - 3 | Изменений -  1",
-                            value=" ",
-                            inline=False)
-            embed.add_field(name='Добавлено:',
-                            value='**•** Добавлен обработчик неверных команды.',
-                            inline=False)
-            embed.add_field(name='Улучшено:',
-                            value='**•** Улучшена проверка на файлы(если отсутствует, то пишет предупреждение)\n'
-                                  '**•** Улучшен код для других разработчиков(читаемость, подсказки)\n'
-                                  '**•** Улучшена отправка сообщений: теперь после запуска, остановки... сервера, бот удаляет прошлое сообщение "Запускается...",  "Останавливается..."',
-                            inline=False)
-            embed.add_field(name='Исправлено:',
-                            value='**•** Исправлен синтаксис кода, для старых версий Python.',
-                            inline=False)
-            embed.add_field(name='Изменено:',
-                            value='**•** Изменён шаблон сообщения при обновление бота.',
-                            inline=False)
-            embed.add_field(name='Нашли баги?',
-                            value=f'**•** Пишите сюда -> {self.config["channels"]["bugs"]}',
-                            inline=False)
-            embed.add_field(name='Придумали идею?',
-                            value=f'**•** Пишите сюда -> {self.config["channels"]["ideas"]}',
-                            inline=False)
-            embed.add_field(name='Хотите посмотреть код?',
-                            value=f'**•** Смотрите здесь -> {self.config["urls"]["url_github_DS-BOT-3"]}')
-            embed.set_author(name=f'Автор {self.config["created_by"]}',
-                             url=f"{self.config["urls"]["url_github"]}")
-            embed.set_thumbnail(url=f"{self.config["urls"]["url_gif"]}")
-            embed.add_field(name='Дата: 28.08.2024 > 28.09.2024', value=' ', inline=False)
-            await message.channel.send(embed=embed)
-        
+  
     async def start_server(self, message: Message) -> Embed:
         server_status = self.ptero_control.server_start(self.config['pterodactyl']['server_name'][message.content[7:].lower()])
         starting_message = None
