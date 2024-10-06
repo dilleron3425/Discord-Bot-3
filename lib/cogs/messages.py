@@ -60,7 +60,7 @@ class Messenger():
         embed.add_field(name=':small_red_triangle_down: ?stop [имя_сервера]', value='**Останавливает указанный сервер**', inline=False)
         embed.add_field(name=':small_red_triangle_down: ?stat [имя_сервера]', value='**Показывает статистику указанного сервера**', inline=False)
         await message.channel.send(embed=embed)
-  
+
     async def start_server(self, message: Message) -> Embed:
         server_status = self.ptero_control.server_start(self.config['pterodactyl']['server_name'][message.content[7:].lower()])
         starting_message = None
@@ -69,8 +69,10 @@ class Messenger():
             embed = Embed(title=f":mag_right: Статус {server_name}", color=server_info['color'])
             embed.add_field(name=f':loudspeaker: {server_info["message"]}', value='', inline=False)
             if "Запускается..." in server_info['message']:
+                embed.add_field(name=":loudspeaker: Запускается...", value=' ')
                 starting_message = await message.channel.send(embed=embed)
             elif "Уже запущен" in server_info['message']:
+                embed.add_field(name=":loudspeaker: Уже запущен!", value=' ')
                 await message.channel.send(embed=embed)
                 return
             else:
@@ -91,8 +93,10 @@ class Messenger():
             embed = Embed(title=f":mag_right: Статус {server_name}", color=server_info['color'])
             embed.add_field(name=f':loudspeaker: {server_info["message"]}', value='', inline=False)
             if "Перезапускается..." in server_info['message']:
+                embed.add_field(name=":loudspeaker: Перезапускается...", value=' ')
                 starting_message = await message.channel.send(embed=embed)
             elif "Уже перезапускается..." in server_info['message']:
+                embed.add_field(name=":loudspeaker: Уже перезапускается!", value=' ')
                 await message.channel.send(embed=embed)
                 return
             else:
@@ -113,8 +117,10 @@ class Messenger():
             server_name, server_info = next(iter(status.items()))
             embed = Embed(title=f":mag_right: Статус {server_name}", color=server_info['color'])
             if  "Остановка..." in server_info['message']:
+                embed.add_field(name=":loudspeaker: Остановка...", value=' ')
                 starting_message = await message.channel.send(embed=embed)
             elif "Уже остановлен" in server_info['message']:
+                embed.add_field(name=":loudspeaker: Уже остановлен!", value=' ')
                 await message.channel.send(embed=embed)
                 return
             else:
